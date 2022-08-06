@@ -1,0 +1,34 @@
+//Part Number: GW1NR-LV9QN88PC6/I5
+
+IO_LOC "clk" 52;
+IO_LOC "led[0]" 10;
+IO_LOC "led[1]" 11;
+IO_LOC "led[2]" 13;
+IO_LOC "led[3]" 14;
+IO_LOC "led[4]" 15;
+IO_LOC "led[5]" 16;
+IO_LOC "key" 3;
+IO_LOC "rst" 4;
+
+
+// true LVDS pins
+IO_LOC "tlvds_p" 25,26;
+
+IO_LOC "lcd_data" 77;
+IO_PORT "lcd_data" PULL_MODE=UP DRIVE=8;
+IO_LOC "lcd_rs" 49;
+IO_PORT "lcd_rs" PULL_MODE=UP DRIVE=8;
+IO_LOC "lcd_cs" 48;
+IO_PORT "lcd_cs" PULL_MODE=UP DRIVE=8;
+IO_LOC "lcd_clk" 76;
+IO_PORT "lcd_clk" PULL_MODE=UP DRIVE=8;
+IO_LOC "lcd_resetn" 47;
+IO_PORT "lcd_resetn" PULL_MODE=UP DRIVE=8;
+IO_LOC "ser_tx" 17;
+IO_PORT "ser_tx" PULL_MODE=UP DRIVE=8;
+IO_LOC "clk" 52;
+IO_PORT "clk" PULL_MODE=UP;
+IO_LOC "ser_rx" 18;
+IO_PORT "ser_rx" PULL_MODE=UP;
+IO_LOC "resetn" 4;
+IO_PORT "resetn" PULL_MODE=UP;
