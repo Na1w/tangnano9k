@@ -1,7 +1,7 @@
 YOSYS ?= yosys
 NEXTPNR ?= nextpnr-gowin
 
-all:	test-tangnano4k-prog
+all:	test-tangnano9k-prog
 
 clean:	
 	rm -rf *.json *.fs *-unpacked.v
@@ -20,8 +20,8 @@ clean:
 %-tangnano9k-unpacked.v: %-tangnano9k.fs
 	gowin_unpack -d GW1N-9C -o $@ $^
 
-%-tangnano4k-prog: %-tangnano9k.fs
+%-tangnano9k-prog: %-tangnano9k.fs
 	openFPGALoader -b tangnano9k $^
 
-%-tangnano4k-prog-flash: %-tangnano9k.fs
+%-tangnano9k-prog-flash: %-tangnano9k.fs
 	openFPGALoader -f -b tangnano9k $^

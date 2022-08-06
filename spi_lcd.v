@@ -236,7 +236,7 @@ always@(posedge clk or negedge resetn) begin
 
 			INIT_DONE : begin
 				if (pixel_c <= 1) begin
-				    pixel_c <= 32400;
+				    ;//pixel_c <= 32400;
 				end else if (pixel_cnt == 32400) begin
 					pixel_cnt <= 0;
 					pixel_c <= pixel_c - 1;
