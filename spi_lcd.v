@@ -2,8 +2,6 @@
 // by fanoble, QQ:87430545
 // 27/6/2022
 
-`timescale 1ps/1ps
-
 module lcd114_test(
 	input clk, // 27M
 	input resetn,
@@ -19,6 +17,8 @@ module lcd114_test(
 );
 
 localparam MAX_CMDS = 69;
+localparam ROW_PIXELS = 240;
+localparam COLUMN_PIXELS = 135;
 
 wire [8:0] init_cmd[MAX_CMDS:0];
 
@@ -101,20 +101,9 @@ localparam INIT_SNOOZE  = 4'b0011; // delay 120ms after wakeup
 localparam INIT_WORKING = 4'b0100; // write command & data
 localparam INIT_DONE    = 4'b0101; // all done
 
-`ifdef MODELTECH
-
 localparam CNT_100MS = 32'd2700000;
 localparam CNT_120MS = 32'd3240000;
 localparam CNT_200MS = 32'd5400000;
-
-`else
-
-// speedup for simulation
-localparam CNT_100MS = 32'd27;
-localparam CNT_120MS = 32'd32;
-localparam CNT_200MS = 32'd54;
-
-`endif
 
 
 reg [ 3:0] init_state;
@@ -122,11 +111,9 @@ reg [ 6:0] cmd_index;
 reg [31:0] clk_cnt;
 reg [ 4:0] bit_loop;
 
-reg [15:0] pixel_cnt;
-
-reg lcd_cs_r;
-reg lcd_rs_r;
-reg lcd_reset_r;
+reg lcd_cs_r = 1;
+reg lcd_rs_r = 1;
+reg lcd_reset_r = 0;
 
 reg [7:0] spi_data;
 
@@ -136,15 +123,14 @@ assign lcd_cs     = lcd_cs_r;
 assign lcd_rs     = lcd_rs_r;
 assign lcd_data   = spi_data[7]; // MSB
 
-// gen color bar
-reg [15:0] pixel_c = 150;
-reg [15:0] frame_ctr = 0;
+reg [8:0] pixel_x = 0;
+reg [8:0] pixel_y = 0;
+reg [8:0] frame_ctr = 0;
+reg [3:0] bounce_ctr = 1;
 
-wire [15:0] pixel = (pixel_cnt >= pixel_c && pixel_cnt <= pixel_c - 5) ? 16'hFFFF : pixel_c; // 16'h0000;
-/*
-wire [15:0] pixel = (pixel_cnt >= 21600) ? 16'hF800 :
-					(pixel_cnt >= pixel_c/*10800) ? 16'h07C0 : 16'h001F;
-*/
+reg direction = 1; 
+
+wire [15:0] pixel = pixel_y <= frame_ctr ? pixel_x > frame_ctr ? { pixel_y[5:0], pixel_y[5:0], pixel_y[5:0]} : 16'h0500 : 16'h005; 
 
 always@(posedge clk or negedge resetn) begin
 	if (~resetn) begin
@@ -157,8 +143,9 @@ always@(posedge clk or negedge resetn) begin
 		lcd_reset_r <= 0;
 		spi_data <= 8'hFF;
 		bit_loop <= 0;
-
-		pixel_cnt <= 0;
+		pixel_x <= 0;
+		pixel_y <= 0;
+		frame_ctr <= 0;
 	end else begin
 
 		case (init_state)
@@ -236,13 +223,20 @@ always@(posedge clk or negedge resetn) begin
 			end
 
 			INIT_DONE : begin
-				pixel_c <= pixel_c + 1;
-				if (pixel_c <= 1) begin
-				    pixel_c <= 320;
-				end else if (pixel_cnt == 32400) begin
-					frame_ctr <= frame_ctr + 1;
-					pixel_cnt <= 0;
-					; // stop
+				if(frame_ctr >= ROW_PIXELS-1 && direction) begin
+					direction <= 0;
+				end else if(frame_ctr <= 0 && ~direction) begin
+					direction <= 1;
+					bounce_ctr <= bounce_ctr < 6 ? bounce_ctr + 1 : 1;
+
+					//frame_ctr <= 0;
+				end else if(pixel_y >= COLUMN_PIXELS-1) begin
+					frame_ctr <= direction ? frame_ctr + 1 : frame_ctr - 1;
+					pixel_y <= 0;
+					pixel_x <= 0;
+				end else if(pixel_x >= ROW_PIXELS-1) begin
+					pixel_x <= 0;
+					pixel_y <= pixel_y + 1;
 				end else begin
 					if (bit_loop == 0) begin
 						// start
@@ -259,7 +253,7 @@ always@(posedge clk or negedge resetn) begin
 						lcd_cs_r <= 1;
 						lcd_rs_r <= 1;
 						bit_loop <= 0;
-						pixel_cnt <= pixel_cnt + 1; // next pixel
+						pixel_x <= pixel_x + bounce_ctr;
 					end else begin
 						// loop
 						spi_data <= { spi_data[6:0], 1'b1 };
