@@ -137,9 +137,10 @@ assign lcd_rs     = lcd_rs_r;
 assign lcd_data   = spi_data[7]; // MSB
 
 // gen color bar
-reg [15:0] pixel_c = 32400;
+reg [15:0] pixel_c = 150;
+reg [15:0] frame_ctr = 0;
 
-wire [15:0] pixel = (pixel_cnt == pixel_c/*21600*/) ? 16'hFFFF : 16'h0000;
+wire [15:0] pixel = (pixel_cnt >= pixel_c && pixel_cnt <= pixel_c - 5) ? 16'hFFFF : pixel_c; // 16'h0000;
 /*
 wire [15:0] pixel = (pixel_cnt >= 21600) ? 16'hF800 :
 					(pixel_cnt >= pixel_c/*10800) ? 16'h07C0 : 16'h001F;
@@ -235,23 +236,22 @@ always@(posedge clk or negedge resetn) begin
 			end
 
 			INIT_DONE : begin
+				pixel_c <= pixel_c + 1;
 				if (pixel_c <= 1) begin
-				    ;//pixel_c <= 32400;
+				    pixel_c <= 320;
 				end else if (pixel_cnt == 32400) begin
+					frame_ctr <= frame_ctr + 1;
 					pixel_cnt <= 0;
-					pixel_c <= pixel_c - 1;
-					//; // stop
+					; // stop
 				end else begin
 					if (bit_loop == 0) begin
 						// start
 						lcd_cs_r <= 0;
 						lcd_rs_r <= 1;
-//						spi_data <= 8'hF8; // RED
 						spi_data <= pixel[15:8];
 						bit_loop <= bit_loop + 1;
 					end else if (bit_loop == 8) begin
 						// next byte
-//						spi_data <= 8'h00; // RED
 						spi_data <= pixel[7:0];
 						bit_loop <= bit_loop + 1;
 					end else if (bit_loop == 16) begin
